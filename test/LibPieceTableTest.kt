@@ -12,4 +12,15 @@ class LibPieceTableTest {
         assertTrue { pieceTable.size() == text.length }
     }
 
+    @Test
+    fun insertTest() {
+        val pieceTable = PieceTable.of("hello")
+
+        pieceTable.append(" ")
+        pieceTable.append("world!")
+        pieceTable.insert(0, "Su Yuxi, ")
+        pieceTable.insert(0, "Hi, ")
+        println(pieceTable.toString())
+    }
+
 }

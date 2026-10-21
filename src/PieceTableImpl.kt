@@ -10,9 +10,11 @@ internal class PieceTableImpl(
 
     private var appendOnlyBuffer = ByteArrayUtil.EMPTY_BYTE_ARRAY
 
+    private val pieces = ArrayList<Piece>()
+
     private var size = 0
 
-    private val pieces = ArrayList<Piece>()
+    private var appendOnlyBufferUsage = 0
 
     init {
         open(origin, copy)
@@ -22,10 +24,17 @@ internal class PieceTableImpl(
 
     override fun pieceSize() = pieces.size
 
+    override fun appendOnlyBufferSize() = appendOnlyBuffer.size
+
+    override fun appendOnlyBufferUsage() = appendOnlyBufferUsage
+
+    override fun appendOnlyBufferRemaining() = appendOnlyBufferSize() - appendOnlyBufferUsage()
+
     override fun clear(): PieceTableImpl {
         origin = ByteArrayUtil.EMPTY_BYTE_ARRAY
         appendOnlyBuffer = ByteArray(PieceTable.DEFAULT_APPEND_ONLY_BUFFER_SIZE)
         size = 0
+        appendOnlyBufferUsage = 0
         pieces.clear()
         return this
     }
@@ -47,15 +56,28 @@ internal class PieceTableImpl(
 
     override fun open(content: CharSequence) = open(CharSequenceUtil.toByteArray(content))
 
-    override fun insert(pos: Int, content: ByteArray): PieceTableImpl {
+    override fun insert(pos: Int, content: ByteArray, copy: Boolean): PieceTableImpl {
         requirePos(pos, "Pos", allowEqualsSize = true)
-        if (origin.isEmpty()) return open(content)
+        if (origin.isEmpty()) return open(content, copy)
+        val content = if (copy) content.copyOf() else content
+        if (pos == 0 || pos == size()) {
+            val newPiece = Piece.of(pos, appendOnlyBufferUsage, content.size)
+            appendToAppendOnlyBuffer(content)
+            val pieceIndex = if (pos == 0) 0 else pieces.size
+            pieces.add(pieceIndex, newPiece)
+            updatePieces(content.size, pieceIndex + 1)
+            size += content.size
+            return this
+        }
+
+
+
         return this
     }
 
     override fun insert(pos: Int, content: CharSequence) = insert(pos, CharSequenceUtil.toByteArray(content))
 
-    override fun append(content: ByteArray) = insert(size(), content)
+    override fun append(content: ByteArray, copy: Boolean) = insert(size(), content, copy)
 
     override fun append(content: CharSequence) = insert(size(), content)
 
@@ -82,12 +104,61 @@ internal class PieceTableImpl(
 
     override fun getContentString() = getContent().decodeToString()
 
-    override fun getPiece(pieceIndex: Int) = pieces[pieceIndex]
+    override fun getPieces() = pieces
+
+    override fun getPiece(pieceIndex: Int) = pieces[pieceIndex].copy()
+
+    override fun toString() = "PieceTable(size=${size()}, pieceSize=${pieceSize()}, appendOnlyBufferSize=${appendOnlyBufferSize()}, appendOnlyBufferUsage=$appendOnlyBufferUsage, appendOnlyBufferRemaining=${appendOnlyBufferRemaining()}, pieces=${piecesToString()})"
+
+    override fun piecesToString() = buildString {
+        append("[")
+        if (pieceSize() > 0) {
+            appendLine()
+            for ((index, piece) in pieces.withIndex()) {
+                val (pos, bufferPos, count, type) = piece
+                val buffer = when (type) {
+                    PieceType.Origin -> origin
+                    PieceType.Append -> appendOnlyBuffer
+                }
+                val content = try {
+                    buffer.decodeToString(bufferPos, bufferPos + count)
+                } catch (e: Exception) {
+                    "Error: ${e.message}"
+                }
+                append("Piece(pos=$pos, bufferPos=$bufferPos, count=$count, content=\"$content\", type=$type)")
+                if (index + 1 < pieceSize()) {
+                    append(", ")
+                }
+                appendLine()
+            }
+        }
+        append("]")
+    }
 
     override fun indexOfPiece(piece: Piece) = pieces.indexOf(piece)
 
     override fun indexOfPiece(pos: Int, exactMatch: Boolean) =
         pieces.indexOfFirst { if (exactMatch) pos == it.pos else pos in it.pos until it.count }
+
+    private fun updatePieces(moddedPos: Int, fromPieceIndex: Int, toPieceIndex: Int = pieces.size) {
+        for (pieceIndex in fromPieceIndex until toPieceIndex) {
+            val piece = pieces[pieceIndex]
+            piece.pos += moddedPos
+        }
+    }
+
+    private fun appendToAppendOnlyBuffer(content: ByteArray) {
+        if (appendOnlyBufferUsage + content.size <= appendOnlyBuffer.size) {
+            content.copyInto(appendOnlyBuffer, appendOnlyBufferUsage)
+            appendOnlyBufferUsage += content.size
+            return
+        }
+
+        val newAppendOnlyBuffer = appendOnlyBuffer.copyOf(appendOnlyBuffer.size + content.size + PieceTable.DEFAULT_APPEND_ONLY_BUFFER_SIZE)
+        content.copyInto(newAppendOnlyBuffer, appendOnlyBufferUsage)
+        appendOnlyBuffer = newAppendOnlyBuffer
+        appendOnlyBufferUsage += content.size
+    }
 
     private fun requirePos(pos: Int, message: String, allowEqualsSize: Boolean = false) {
         val range = if (allowEqualsSize) 0..size() else 0 until size()

@@ -5,4 +5,8 @@ internal data class PieceImpl(
     override var bufferPos: Int,
     override var count: Int,
     override val type: PieceType
-) : Piece
+) : Piece {
+
+    override fun copy(): PieceImpl = copy(pos = pos, bufferPos = bufferPos, count = count, type = type)
+
+}

@@ -29,4 +29,14 @@ interface Piece {
 
     val type: PieceType
 
+    fun copy(): Piece
+
+    operator fun component1(): Int
+
+    operator fun component2(): Int
+
+    operator fun component3(): Int
+
+    operator fun component4(): PieceType
+
 }
