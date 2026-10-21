@@ -1,2 +1,1 @@
-kotlin.bat linguist-language=kotlin
-kotlin linguist-language=kotlin
+*.bat linguist-language=kotlin
