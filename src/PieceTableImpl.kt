@@ -4,7 +4,7 @@ import io.github.mucute.qwq.piecetable.util.ByteArrayUtil
 import io.github.mucute.qwq.piecetable.util.CharSequenceUtil
 
 internal class PieceTableImpl(
-    private var origin: ByteArray,
+    private var originalBuffer: ByteArray,
     copy: Boolean
 ) : PieceTable {
 
@@ -17,7 +17,7 @@ internal class PieceTableImpl(
     private var appendOnlyBufferUsage = 0
 
     init {
-        open(origin, copy)
+        open(originalBuffer, copy)
     }
 
     override fun size() = size
@@ -31,7 +31,7 @@ internal class PieceTableImpl(
     override fun appendOnlyBufferRemaining() = appendOnlyBufferSize() - appendOnlyBufferUsage()
 
     override fun clear(): PieceTableImpl {
-        origin = ByteArrayUtil.EMPTY_BYTE_ARRAY
+        originalBuffer = ByteArrayUtil.EMPTY_BYTE_ARRAY
         appendOnlyBuffer = ByteArray(PieceTable.DEFAULT_APPEND_ONLY_BUFFER_SIZE)
         size = 0
         appendOnlyBufferUsage = 0
@@ -41,13 +41,13 @@ internal class PieceTableImpl(
 
     override fun open(content: ByteArray, copy: Boolean): PieceTableImpl {
         clear()
-        origin = if (copy) content.copyOf() else content
-        size = origin.size
+        originalBuffer = if (copy) content.copyOf() else content
+        size = originalBuffer.size
         pieces.add(
             Piece.of(
                 pos = 0,
                 bufferPos = 0,
-                count = origin.size,
+                count = originalBuffer.size,
                 type = PieceType.Origin
             )
         )
@@ -58,7 +58,7 @@ internal class PieceTableImpl(
 
     override fun insert(pos: Int, content: ByteArray, copy: Boolean): PieceTableImpl {
         requirePos(pos, "Pos", allowEqualsSize = true)
-        if (origin.isEmpty()) return open(content, copy)
+        if (originalBuffer.isEmpty()) return open(content, copy)
         val content = if (copy) content.copyOf() else content
         if (pos == 0 || pos == size()) {
             val newPiece = Piece.of(pos, appendOnlyBufferUsage, content.size)
@@ -117,7 +117,7 @@ internal class PieceTableImpl(
             for ((index, piece) in pieces.withIndex()) {
                 val (pos, bufferPos, count, type) = piece
                 val buffer = when (type) {
-                    PieceType.Origin -> origin
+                    PieceType.Origin -> originalBuffer
                     PieceType.Append -> appendOnlyBuffer
                 }
                 val content = try {

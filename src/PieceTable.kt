@@ -7,6 +7,7 @@ import kotlin.jvm.JvmStatic
  *
  * An implementation of it is [PieceTableImpl].
  *
+ * @see Piece
  * @see PieceTableImpl
  * */
 interface PieceTable {
