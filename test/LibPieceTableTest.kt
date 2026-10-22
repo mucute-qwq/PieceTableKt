@@ -15,10 +15,11 @@ class LibPieceTableTest {
     @Test
     fun insertTest() {
         val pieceTable = PieceTable.of("Hello")
-        pieceTable.append("AAA")
-        pieceTable.insert(5, "PPP")
-        pieceTable.insert(5, "WTF")
-        pieceTable.insert(8, "UUU")
+        pieceTable.append(" ")
+        pieceTable.append("World")
+        pieceTable.append("UUU")
+        pieceTable.append("CCC")
+        pieceTable.deleteRange(5, 12)
         println(pieceTable.toString())
     }
 

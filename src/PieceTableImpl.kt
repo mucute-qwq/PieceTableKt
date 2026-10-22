@@ -107,20 +107,77 @@ internal class PieceTableImpl(
         requirePosRange(startPos, endPos)
         val startPieceIndex = indexOfPiece(startPos).takeIf { it >= 0 } ?: return this
         val startPiece = pieces[startPieceIndex]
-        val endPieceIndex = indexOfPiece(endPos, fromPieceIndex = startPieceIndex, reachEnd = true).takeIf { it >= 0 } ?: return this
+        val endPieceIndex =
+            indexOfPiece(endPos, fromPieceIndex = startPieceIndex, reachEnd = true).takeIf { it >= 0 } ?: return this
         val endPiece = pieces[endPieceIndex]
-        val deletedCount = endPos - startPiece.pos
-        println("startPieceIndex: $startPieceIndex, endPieceIndex: $endPieceIndex")
+        val deletedCount = endPos - startPos
 
         if (startPieceIndex == endPieceIndex) {
             if (startPos == startPiece.pos && endPos == endPiece.pos + endPiece.count) {
                 pieces.removeAt(startPieceIndex)
-                updatePieces(-startPiece.count, fromPieceIndex = startPieceIndex)
+                updatePieces(-deletedCount, fromPieceIndex = startPieceIndex)
                 size -= deletedCount
                 return this
             }
+
+            if (startPos == startPiece.pos || endPos == endPiece.pos + endPiece.count) {
+                if (startPos == startPiece.pos) {
+                    startPiece.bufferPos += deletedCount
+                }
+                startPiece.count -= deletedCount
+                updatePieces(-deletedCount, fromPieceIndex = startPieceIndex + 1)
+                size -= deletedCount
+                return this
+            }
+
+            val splitLeftCount = startPos - startPiece.pos
+            val splitRightCount = startPiece.count - splitLeftCount - deletedCount
+
+            startPiece.count = splitLeftCount
+
+            val rightPiece = Piece.of(
+                startPiece.pos + splitLeftCount,
+                startPiece.bufferPos + splitLeftCount + deletedCount,
+                splitRightCount,
+                startPiece.type
+            )
+            pieces.add(startPieceIndex + 1, rightPiece)
+            updatePieces(-deletedCount, startPieceIndex + 2)
+            size -= deletedCount
+
             return this
         }
+
+        val startCount = startPos - startPiece.pos
+        val endDeletedCount = endPos - endPiece.pos
+        val endCount = endPiece.count - endDeletedCount
+        val removeListSize = endPieceIndex - startPieceIndex + when {
+            startCount <= 0 && endCount <= 0 -> 2
+            startCount <= 0 || endCount <= 0 -> 1
+            else -> 0
+        }
+        val removeList = ArrayList<Piece>(removeListSize)
+
+        startPiece.count = startCount
+        endPiece.pos = startPiece.pos + startCount
+        endPiece.bufferPos += endDeletedCount
+        endPiece.count = endCount
+
+        if (startCount <= 0) {
+            removeList.add(startPiece)
+        }
+
+        for (pieceIndex in startPieceIndex + 1 until endPieceIndex) {
+            removeList.add(pieces[pieceIndex])
+        }
+
+        if (endCount <= 0) {
+            removeList.add(endPiece)
+        }
+
+        updatePieces(-deletedCount, endPieceIndex + 1)
+        pieces.removeAll(removeList)
+        size -= deletedCount
 
         return this
     }
