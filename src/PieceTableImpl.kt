@@ -70,7 +70,21 @@ internal class PieceTableImpl(
             return this
         }
 
+        val leftPieceIndex = indexOfPiece(pos).takeIf { it >= 0 } ?: return this
+        val leftPiece = pieces[leftPieceIndex]
+        val splitLeftCount = pos - leftPiece.pos
+        val splitRightCount = leftPiece.count - splitLeftCount
 
+        leftPiece.count = splitLeftCount
+
+        val newPiece = Piece.of(pos, appendOnlyBufferUsage, content.size)
+        appendToAppendOnlyBuffer(content)
+        pieces.add(leftPieceIndex + 1, newPiece)
+
+        val rightPiece = Piece.of(pos + content.size, leftPiece.bufferPos + splitLeftCount, splitRightCount, leftPiece.type)
+        pieces.add(leftPieceIndex + 2, rightPiece)
+        updatePieces(content.size, leftPieceIndex + 3)
+        size += content.size
 
         return this
     }
@@ -125,7 +139,7 @@ internal class PieceTableImpl(
                 } catch (e: Exception) {
                     "Error: ${e.message}"
                 }
-                append("Piece(pos=$pos, bufferPos=$bufferPos, count=$count, content=\"$content\", type=$type)")
+                append("\tPiece(pos=$pos, bufferPos=$bufferPos, count=$count, content=\"$content\", type=$type)")
                 if (index + 1 < pieceSize()) {
                     append(", ")
                 }

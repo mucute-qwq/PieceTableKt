@@ -14,12 +14,10 @@ class LibPieceTableTest {
 
     @Test
     fun insertTest() {
-        val pieceTable = PieceTable.of("hello")
-
-        pieceTable.append(" ")
-        pieceTable.append("world!")
-        pieceTable.insert(0, "Su Yuxi, ")
-        pieceTable.insert(0, "Hi, ")
+        val pieceTable = PieceTable.of("Hello")
+        pieceTable.insert(2, "AA")
+        pieceTable.insert(1, "WTF")
+        pieceTable.insert(0, "BB")
         println(pieceTable.toString())
     }
 
