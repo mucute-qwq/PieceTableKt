@@ -16,12 +16,6 @@ internal class PieceTableImpl(
 
     private var appendOnlyBufferUsage = 0
 
-    private inline val Piece.source: ByteArray
-        get() = when (type) {
-            PieceType.Origin -> originalBuffer
-            PieceType.Append -> appendOnlyBuffer
-        }
-
     init {
         open(originalBuffer, copy)
     }
@@ -213,7 +207,7 @@ internal class PieceTableImpl(
             return this
         }
 
-        val startSource = startPiece.source
+        val startSource = getBuffer(startPiece.type)
         val startPieceCopyStart = startPiece.bufferPos + (startPos - startPiece.pos)
         val startPieceCopyEnd = startPiece.bufferPos + startPiece.count
 
@@ -222,12 +216,12 @@ internal class PieceTableImpl(
 
         for (pieceIndex in startPieceIndex + 1 until endPieceIndex) {
             val piece = pieces[pieceIndex]
-            val source = piece.source
+            val source = getBuffer(piece.type)
             source.copyInto(destination, offset, piece.bufferPos, piece.bufferPos + piece.count)
             offset += piece.count
         }
 
-        val endSource = endPiece.source
+        val endSource = getBuffer(endPiece.type)
         val endPieceCopyStart = endPiece.bufferPos
         val endPieceCopyEnd = endPiece.bufferPos + (endPos - endPiece.pos)
         endSource.copyInto(destination, offset, endPieceCopyStart, endPieceCopyEnd)
@@ -240,9 +234,9 @@ internal class PieceTableImpl(
 
     override fun getString(startPos: Int, endPos: Int) = get(startPos, endPos).decodeToString()
 
-    override operator fun get(pos: Int) = get(pos, pos + 1).first()
+    override fun getByte(pos: Int) = get(pos, pos + 1).first()
 
-    override fun getChar(pos: Int) = get(pos).toInt().toChar()
+    override fun getChar(pos: Int) = getByte(pos).toInt().toChar()
 
     override fun getContent() = if (size() > 0) get(0, size()) else ByteArray(0)
 
@@ -251,6 +245,15 @@ internal class PieceTableImpl(
     override fun getPieces() = pieces
 
     override fun getPiece(pieceIndex: Int) = pieces[pieceIndex].copy()
+
+    override fun getOriginalBuffer() = originalBuffer
+
+    override fun getAppendOnlyBuffer() = appendOnlyBuffer
+
+    override fun getBuffer(type: PieceType) = when (type) {
+        PieceType.Origin -> originalBuffer
+        PieceType.Append -> appendOnlyBuffer
+    }
 
     override fun toString() =
         "PieceTable(size=${size()}, pieceSize=${pieceSize()}, appendOnlyBufferSize=${appendOnlyBufferSize()}, appendOnlyBufferUsage=$appendOnlyBufferUsage, appendOnlyBufferRemaining=${appendOnlyBufferRemaining()}, pieces=${piecesToString()})"

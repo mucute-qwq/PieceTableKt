@@ -1,6 +1,6 @@
 import io.github.mucute.qwq.piecetable.PieceTable
 import kotlin.test.Test
-import kotlin.test.assertTrue
+import kotlin.test.assertEquals
 
 class LibPieceTableTest {
 
@@ -8,17 +8,72 @@ class LibPieceTableTest {
     fun instantTest() {
         val text = "Hello World"
         val pieceTable = PieceTable.of(text)
-        println("Piece table size: ${pieceTable.size()}, text size: ${text.length}")
-        assertTrue { pieceTable.size() == text.length }
+
+        println("PieceTable: ${pieceTable.getContentString()}")
+
+        assertEquals(text, pieceTable.getContentString())
+        assertEquals(text.length, pieceTable.size())
     }
 
     @Test
     fun insertTest() {
+        val stringBuilder = StringBuilder("Hello")
+            .append(" ")
+            .append("World")
+            .append("!")
+            .insert(0, "Hi,")
+            .insert(3, " ")
+            .insert(4, "user!")
+            .insert(9, " ")
+
         val pieceTable = PieceTable.of("Hello")
             .append(" ")
             .append("World")
-        println(pieceTable.getChar(1))
-        println(pieceTable)
+            .append("!")
+            .insert(0, "Hi,")
+            .insert(3, " ")
+            .insert(4, "user!")
+            .insert(9, " ")
+
+        println("StringBuilder: $stringBuilder")
+        println("PieceTable: ${pieceTable.getContentString()}")
+
+        assertEquals(stringBuilder.toString(), pieceTable.getContentString())
+        assertEquals(stringBuilder.length, pieceTable.size())
+    }
+
+    @Test
+    fun deleteTest() {
+        val text = "Hello World"
+        val stringBuilder = StringBuilder(text)
+            .deleteRange(1, 4)
+            .deleteAt(6)
+
+        val pieceTable = PieceTable.of(text)
+            .deleteRange(1, 4)
+            .deleteAt(6)
+
+        println("StringBuilder: $stringBuilder")
+        println("PieceTable: ${pieceTable.getContentString()}")
+
+        assertEquals(stringBuilder.toString(), pieceTable.getContentString())
+        assertEquals(stringBuilder.length, pieceTable.size())
+    }
+
+    @Test
+    fun getTest() {
+        val text = "Hi, user! Hello World!"
+        val stringBuilderSubstring = StringBuilder(text)
+            .substring(4, 9)
+
+        val pieceTableSubstring = PieceTable.of(text)
+            .getString(4, 9)
+
+        println("StringBuilderSubstring: $stringBuilderSubstring")
+        println("PieceTableSubstring: $pieceTableSubstring")
+
+        assertEquals(stringBuilderSubstring, pieceTableSubstring)
+        assertEquals(stringBuilderSubstring.length, pieceTableSubstring.length)
     }
 
 }

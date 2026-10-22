@@ -1,5 +1,6 @@
 package io.github.mucute.qwq.piecetable
 
+import io.github.mucute.qwq.piecetable.util.CharSequenceUtil
 import kotlin.jvm.JvmStatic
 
 /**
@@ -44,7 +45,7 @@ interface PieceTable {
          * @see PieceTableImpl
          * */
         @JvmStatic
-        fun of(content: CharSequence = "") = of(ByteArray(content.length) { content[it].code.toByte() }, false)
+        fun of(content: CharSequence = "") = of(CharSequenceUtil.toByteArray(content), false)
 
     }
 
@@ -200,7 +201,7 @@ interface PieceTable {
      *
      * @return the new [String] with given range.
      *
-     * @see PieceTableImpl.get
+     * @see PieceTableImpl.getString
      * */
     fun getString(startPos: Int, endPos: Int): String
 
@@ -211,9 +212,9 @@ interface PieceTable {
      *
      * @return the specified [Byte].
      *
-     * @see PieceTableImpl.get
+     * @see PieceTableImpl.getByte
      * */
-    operator fun get(pos: Int): Byte
+    fun getByte(pos: Int): Byte
 
     /**
      * Get a [Char] from specified position.
@@ -264,6 +265,35 @@ interface PieceTable {
      * @see PieceTableImpl.getPiece
      * */
     fun getPiece(pieceIndex: Int) : Piece
+
+    /**
+     * Get the originalBuffer
+     *
+     * @return the originalBuffer
+     *
+     * @see PieceTableImpl.getOriginalBuffer
+     * */
+    fun getOriginalBuffer(): ByteArray
+
+    /**
+     * Get the appendOnlyBuffer
+     *
+     * @return the appendOnlyBuffer
+     *
+     * @see PieceTableImpl.getAppendOnlyBuffer
+     * */
+    fun getAppendOnlyBuffer(): ByteArray
+
+    /**
+     * Get the buffer
+     *
+     * @param type the [PieceType]
+     *
+     * @return the buffer
+     *
+     * @see PieceTableImpl.getBuffer
+     * */
+    fun getBuffer(type: PieceType): ByteArray
 
     /**
      * Convert to the [String] expression.
