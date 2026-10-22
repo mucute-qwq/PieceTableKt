@@ -16,6 +16,12 @@ internal class PieceTableImpl(
 
     private var appendOnlyBufferUsage = 0
 
+    private inline val Piece.source: ByteArray
+        get() = when (type) {
+            PieceType.Origin -> originalBuffer
+            PieceType.Append -> appendOnlyBuffer
+        }
+
     init {
         open(originalBuffer, copy)
     }
@@ -103,6 +109,7 @@ internal class PieceTableImpl(
 
     override fun append(content: CharSequence) = insert(size(), content)
 
+    @Suppress("DuplicatedCode")
     override fun deleteRange(startPos: Int, endPos: Int): PieceTableImpl {
         requirePosRange(startPos, endPos)
         val startPieceIndex = indexOfPiece(startPos).takeIf { it >= 0 } ?: return this
@@ -184,8 +191,47 @@ internal class PieceTableImpl(
 
     override fun deleteAt(pos: Int) = deleteRange(pos, pos + 1)
 
+    @Suppress("DuplicatedCode")
     override fun copyInto(destination: ByteArray, destinationOffset: Int, startPos: Int, endPos: Int): PieceTableImpl {
         requirePosRange(startPos, endPos)
+
+        val startPieceIndex = indexOfPiece(startPos).takeIf { it >= 0 } ?: return this
+        val startPiece = pieces[startPieceIndex]
+        val endPieceIndex =
+            indexOfPiece(endPos, fromPieceIndex = startPieceIndex, reachEnd = true).takeIf { it >= 0 } ?: return this
+        val endPiece = pieces[endPieceIndex]
+        var offset = destinationOffset
+
+        if (startPieceIndex == endPieceIndex) {
+            val source = when (startPiece.type) {
+                PieceType.Origin -> originalBuffer
+                PieceType.Append -> appendOnlyBuffer
+            }
+            val copyStartIndex = startPiece.bufferPos + (startPos - startPiece.pos)
+            val copyEndIndex = copyStartIndex + (endPos - startPos)
+            source.copyInto(destination, offset, copyStartIndex, copyEndIndex)
+            return this
+        }
+
+        val startSource = startPiece.source
+        val startPieceCopyStart = startPiece.bufferPos + (startPos - startPiece.pos)
+        val startPieceCopyEnd = startPiece.bufferPos + startPiece.count
+
+        startSource.copyInto(destination, offset, startPieceCopyStart, startPieceCopyEnd)
+        offset += startPieceCopyEnd - startPieceCopyStart
+
+        for (pieceIndex in startPieceIndex + 1 until endPieceIndex) {
+            val piece = pieces[pieceIndex]
+            val source = piece.source
+            source.copyInto(destination, offset, piece.bufferPos, piece.bufferPos + piece.count)
+            offset += piece.count
+        }
+
+        val endSource = endPiece.source
+        val endPieceCopyStart = endPiece.bufferPos
+        val endPieceCopyEnd = endPiece.bufferPos + (endPos - endPiece.pos)
+        endSource.copyInto(destination, offset, endPieceCopyStart, endPieceCopyEnd)
+
         return this
     }
 
@@ -195,6 +241,8 @@ internal class PieceTableImpl(
     override fun getString(startPos: Int, endPos: Int) = get(startPos, endPos).decodeToString()
 
     override operator fun get(pos: Int) = get(pos, pos + 1).first()
+
+    override fun getChar(pos: Int) = get(pos).toInt().toChar()
 
     override fun getContent() = if (size() > 0) get(0, size()) else ByteArray(0)
 

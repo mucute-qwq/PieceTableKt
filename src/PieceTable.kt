@@ -44,7 +44,7 @@ interface PieceTable {
          * @see PieceTableImpl
          * */
         @JvmStatic
-        fun of(content: CharSequence = "") = of(ByteArray(content.length) { content[it].code.toByte() })
+        fun of(content: CharSequence = "") = of(ByteArray(content.length) { content[it].code.toByte() }, false)
 
     }
 
@@ -214,6 +214,17 @@ interface PieceTable {
      * @see PieceTableImpl.get
      * */
     operator fun get(pos: Int): Byte
+
+    /**
+     * Get a [Char] from specified position.
+     *
+     * @param pos the specified position.
+     *
+     * @return the specified [Char].
+     *
+     * @see PieceTableImpl.getChar
+     * */
+    fun getChar(pos: Int): Char
 
     /**
      * Get the full content of [PieceTable].
