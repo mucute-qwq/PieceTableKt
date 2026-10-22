@@ -284,10 +284,12 @@ interface PieceTable {
      * Search for the index of given piece [pos] in [Piece] list.
      *
      * @param pos the position in [PieceTable].
+     * @param fromPieceIndex the start piece index to search.
+     * @param reachEnd can the position reach the piece end position.
      * @param exactMatch [pos] must equals the [Piece] beginning position.
      *
      * @see PieceTableImpl.indexOfPiece
      * */
-    fun indexOfPiece(pos: Int, exactMatch: Boolean = false): Int
+    fun indexOfPiece(pos: Int, fromPieceIndex: Int = 0, reachEnd: Boolean = false, exactMatch: Boolean = false): Int
 
 }

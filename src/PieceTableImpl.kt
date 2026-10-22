@@ -70,8 +70,9 @@ internal class PieceTableImpl(
             return this
         }
 
-        val leftPieceIndex = indexOfPiece(pos).takeIf { it >= 0 } ?: return this
+        val leftPieceIndex = indexOfPiece(pos, reachEnd = true).takeIf { it >= 0 } ?: return this
         val leftPiece = pieces[leftPieceIndex]
+
         val splitLeftCount = pos - leftPiece.pos
         val splitRightCount = leftPiece.count - splitLeftCount
 
@@ -81,7 +82,14 @@ internal class PieceTableImpl(
         appendToAppendOnlyBuffer(content)
         pieces.add(leftPieceIndex + 1, newPiece)
 
-        val rightPiece = Piece.of(pos + content.size, leftPiece.bufferPos + splitLeftCount, splitRightCount, leftPiece.type)
+        if (splitRightCount <= 0) {
+            updatePieces(content.size, leftPieceIndex + 2)
+            size += content.size
+            return this
+        }
+
+        val rightPiece =
+            Piece.of(pos + content.size, leftPiece.bufferPos + splitLeftCount, splitRightCount, leftPiece.type)
         pieces.add(leftPieceIndex + 2, rightPiece)
         updatePieces(content.size, leftPieceIndex + 3)
         size += content.size
@@ -97,6 +105,23 @@ internal class PieceTableImpl(
 
     override fun deleteRange(startPos: Int, endPos: Int): PieceTableImpl {
         requirePosRange(startPos, endPos)
+        val startPieceIndex = indexOfPiece(startPos).takeIf { it >= 0 } ?: return this
+        val startPiece = pieces[startPieceIndex]
+        val endPieceIndex = indexOfPiece(endPos, fromPieceIndex = startPieceIndex, reachEnd = true).takeIf { it >= 0 } ?: return this
+        val endPiece = pieces[endPieceIndex]
+        val deletedCount = endPos - startPiece.pos
+        println("startPieceIndex: $startPieceIndex, endPieceIndex: $endPieceIndex")
+
+        if (startPieceIndex == endPieceIndex) {
+            if (startPos == startPiece.pos && endPos == endPiece.pos + endPiece.count) {
+                pieces.removeAt(startPieceIndex)
+                updatePieces(-startPiece.count, fromPieceIndex = startPieceIndex)
+                size -= deletedCount
+                return this
+            }
+            return this
+        }
+
         return this
     }
 
@@ -122,7 +147,8 @@ internal class PieceTableImpl(
 
     override fun getPiece(pieceIndex: Int) = pieces[pieceIndex].copy()
 
-    override fun toString() = "PieceTable(size=${size()}, pieceSize=${pieceSize()}, appendOnlyBufferSize=${appendOnlyBufferSize()}, appendOnlyBufferUsage=$appendOnlyBufferUsage, appendOnlyBufferRemaining=${appendOnlyBufferRemaining()}, pieces=${piecesToString()})"
+    override fun toString() =
+        "PieceTable(size=${size()}, pieceSize=${pieceSize()}, appendOnlyBufferSize=${appendOnlyBufferSize()}, appendOnlyBufferUsage=$appendOnlyBufferUsage, appendOnlyBufferRemaining=${appendOnlyBufferRemaining()}, pieces=${piecesToString()})"
 
     override fun piecesToString() = buildString {
         append("[")
@@ -151,8 +177,18 @@ internal class PieceTableImpl(
 
     override fun indexOfPiece(piece: Piece) = pieces.indexOf(piece)
 
-    override fun indexOfPiece(pos: Int, exactMatch: Boolean) =
-        pieces.indexOfFirst { if (exactMatch) pos == it.pos else pos in it.pos until it.count }
+    override fun indexOfPiece(pos: Int, fromPieceIndex: Int, reachEnd: Boolean, exactMatch: Boolean): Int {
+        for ((index, piece) in pieces.listIterator(fromPieceIndex).withIndex()) {
+            if (exactMatch) {
+                if (pos == piece.pos) return index + fromPieceIndex
+            } else {
+                val range =
+                    if (reachEnd) piece.pos..piece.pos + piece.count else piece.pos until piece.pos + piece.count
+                if (pos in range) return index + fromPieceIndex
+            }
+        }
+        return -1
+    }
 
     private fun updatePieces(moddedPos: Int, fromPieceIndex: Int, toPieceIndex: Int = pieces.size) {
         for (pieceIndex in fromPieceIndex until toPieceIndex) {
@@ -168,7 +204,8 @@ internal class PieceTableImpl(
             return
         }
 
-        val newAppendOnlyBuffer = appendOnlyBuffer.copyOf(appendOnlyBuffer.size + content.size + PieceTable.DEFAULT_APPEND_ONLY_BUFFER_SIZE)
+        val newAppendOnlyBuffer =
+            appendOnlyBuffer.copyOf(appendOnlyBuffer.size + content.size + PieceTable.DEFAULT_APPEND_ONLY_BUFFER_SIZE)
         content.copyInto(newAppendOnlyBuffer, appendOnlyBufferUsage)
         appendOnlyBuffer = newAppendOnlyBuffer
         appendOnlyBufferUsage += content.size
