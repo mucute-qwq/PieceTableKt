@@ -12,7 +12,7 @@ class LibPieceTableTest {
         println("PieceTable: ${pieceTable.getContentString()}")
 
         assertEquals(text, pieceTable.getContentString())
-        assertEquals(text.length, pieceTable.size())
+        assertEquals(text.length, pieceTable.count())
     }
 
     @Test
@@ -39,7 +39,7 @@ class LibPieceTableTest {
         println("PieceTable: ${pieceTable.getContentString()}")
 
         assertEquals(stringBuilder.toString(), pieceTable.getContentString())
-        assertEquals(stringBuilder.length, pieceTable.size())
+        assertEquals(stringBuilder.length, pieceTable.count())
     }
 
     @Test
@@ -57,7 +57,7 @@ class LibPieceTableTest {
         println("PieceTable: ${pieceTable.getContentString()}")
 
         assertEquals(stringBuilder.toString(), pieceTable.getContentString())
-        assertEquals(stringBuilder.length, pieceTable.size())
+        assertEquals(stringBuilder.length, pieceTable.count())
     }
 
     @Test

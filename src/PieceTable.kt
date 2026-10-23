@@ -26,14 +26,13 @@ interface PieceTable {
          * Create a new [PieceTable] instance with given original [content].
          *
          * @param content the given original content.
-         * @param copy copy the content if needed.
          *
          * @return the new [PieceTable] instance.
          *
          * @see PieceTableImpl
          * */
         @JvmStatic
-        fun of(content: ByteArray, copy: Boolean = false): PieceTable = PieceTableImpl(content, copy)
+        fun of(content: ByteArray): PieceTable = PieceTableImpl(content)
 
         /**
          * Create a new [PieceTable] instance with given original [content].
@@ -45,44 +44,65 @@ interface PieceTable {
          * @see PieceTableImpl
          * */
         @JvmStatic
-        fun of(content: CharSequence = "") = of(CharSequenceUtil.toByteArray(content), false)
+        fun of(content: CharSequence = "") = of(CharSequenceUtil.toByteArray(content))
 
     }
 
     /**
-     * Return the size of PieceTable content.
+     * The originalBuffer.
      *
-     * @see PieceTableImpl.size
+     * @see PieceTableImpl.originalBuffer
      * */
-    fun size(): Int
+    val originalBuffer: ByteArray
 
     /**
-     * Return the size of pieces.
+     * The appendOnlyBuffer.
      *
-     * @see PieceTableImpl.pieceSize
+     * @see PieceTableImpl.appendOnlyBuffer
      * */
-    fun pieceSize(): Int
+    val appendOnlyBuffer: ByteArray
 
     /**
-     * Return the size of appendOnlyBuffer.
+     * The [List] of [Piece].
+     *
+     * @see PieceTableImpl.pieces
+     * */
+    val pieces: List<Piece>
+
+    /**
+     * The count of PieceTable content.
+     *
+     * @see PieceTableImpl.count
+     * */
+    val count: Int
+
+    /**
+     * The size of pieces.
+     *
+     * @see PieceTableImpl.pieceCount
+     * */
+    val pieceCount: Int
+
+    /**
+     * The size of appendOnlyBuffer.
      *
      * @see PieceTableImpl.appendOnlyBufferSize
      * */
-    fun appendOnlyBufferSize(): Int
+    val appendOnlyBufferSize: Int
 
     /**
-     * Return the usage size of appendOnlyBuffer.
+     * The usage size of appendOnlyBuffer.
      *
      * @see PieceTableImpl.appendOnlyBufferUsage
      * */
-    fun appendOnlyBufferUsage(): Int
+    val appendOnlyBufferUsage: Int
 
     /**
-     * Return the remaining size of appendOnlyBuffer.
+     * The remaining size of appendOnlyBuffer.
      *
      * @see PieceTableImpl.appendOnlyBufferRemaining
      * */
-    fun appendOnlyBufferRemaining(): Int
+    val appendOnlyBufferRemaining: Int
 
     /**
      * Clear the content of [PieceTable], releasing the buffers, and reset the size.
@@ -95,18 +115,17 @@ interface PieceTable {
      * Clear the [PieceTable] and insert the given original content into it.
      *
      * @param content the given original content.
-     * @param copy copy the content if needed.
      *
-     * @see clear
+     * @see PieceTableImpl.open
      * */
-    fun open(content: ByteArray, copy: Boolean = false): PieceTable
+    fun open(content: ByteArray): PieceTable
 
     /**
      * Clear the [PieceTable] and insert the given original content into it.
      *
      * @param content the given original content.
      *
-     * @see clear
+     * @see PieceTableImpl.open
      * */
     fun open(content: CharSequence): PieceTable
 
@@ -115,11 +134,10 @@ interface PieceTable {
      *
      * @param pos the position that content will be inserted to.
      * @param content the inserting content.
-     * @param copy copy the content if needed.
      *
      * @see PieceTableImpl.insert
      * */
-    fun insert(pos: Int, content: ByteArray, copy: Boolean = false): PieceTable
+    fun insert(pos: Int, content: ByteArray): PieceTable
 
     /**
      * Insert the given content into the [PieceTable].
@@ -135,11 +153,10 @@ interface PieceTable {
      * Insert the given content into the end of [PieceTable].
      *
      * @param content the inserting content.
-     * @param copy copy the content if needed.
      *
      * @see PieceTableImpl.append
      * */
-    fun append(content: ByteArray, copy: Boolean = false): PieceTable
+    fun append(content: ByteArray): PieceTable
 
     /**
      * Insert the given content into the end of [PieceTable].
@@ -179,7 +196,7 @@ interface PieceTable {
      *
      * @see PieceTableImpl.copyInto
      * */
-    fun copyInto(destination: ByteArray, destinationOffset: Int = 0, startPos: Int = 0, endPos: Int = size()): PieceTable
+    fun copyInto(destination: ByteArray, destinationOffset: Int = 0, startPos: Int = 0, endPos: Int = count): PieceTable
 
     /**
      * Create a new [ByteArray] from given range of [PieceTable] content.
@@ -189,9 +206,9 @@ interface PieceTable {
      *
      * @return the new [ByteArray] with given content of range.
      *
-     * @see PieceTableImpl.get
+     * @see PieceTableImpl.getBuffer
      * */
-    fun get(startPos: Int, endPos: Int): ByteArray
+    fun getBuffer(startPos: Int, endPos: Int): ByteArray
 
     /**
      * Create a new [String] from given range of [PieceTable] content.
@@ -232,9 +249,9 @@ interface PieceTable {
      *
      * @return the [ByteArray] with full content.
      *
-     * @see PieceTableImpl.getContent
+     * @see PieceTableImpl.getContentBuffer
      * */
-    fun getContent(): ByteArray
+    fun getContentBuffer(): ByteArray
 
     /**
      * Get the full content [String] of [PieceTable].
@@ -244,56 +261,6 @@ interface PieceTable {
      * @see PieceTableImpl.getContentString
      * */
     fun getContentString(): String
-
-    /**
-     * Get the [List] of [Piece].
-     *
-     * @return the [List] of [Piece].
-     *
-     * @see Piece
-     * @see PieceTableImpl.getPieces
-     * */
-    fun getPieces(): List<Piece>
-
-    /**
-     * Get the [Piece] by specified [pieceIndex].
-     *
-     * @param pieceIndex the specified index of pieces.
-     *
-     * @return the [Piece].
-     *
-     * @see PieceTableImpl.getPiece
-     * */
-    fun getPiece(pieceIndex: Int) : Piece
-
-    /**
-     * Get the originalBuffer
-     *
-     * @return the originalBuffer
-     *
-     * @see PieceTableImpl.getOriginalBuffer
-     * */
-    fun getOriginalBuffer(): ByteArray
-
-    /**
-     * Get the appendOnlyBuffer
-     *
-     * @return the appendOnlyBuffer
-     *
-     * @see PieceTableImpl.getAppendOnlyBuffer
-     * */
-    fun getAppendOnlyBuffer(): ByteArray
-
-    /**
-     * Get the buffer
-     *
-     * @param type the [PieceType]
-     *
-     * @return the buffer
-     *
-     * @see PieceTableImpl.getBuffer
-     * */
-    fun getBuffer(type: PieceType): ByteArray
 
     /**
      * Convert to the [String] expression.
